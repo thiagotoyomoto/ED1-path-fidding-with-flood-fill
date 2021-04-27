@@ -39,7 +39,7 @@ void Field_draw (Field *field, Positions *positions) {
     for (i = 0; i < field->height; ++i) {
         for (j = 0; j < field->width; ++j) {
             Vector2 pos   = { j, i };
-            int     value = field->data[j][i];
+            int     value = field->data[i][j];
 
             bool is_start_pos    = Vector2_equals (pos, positions->start);
             bool is_target_pos   = Vector2_equals (pos, positions->target);
@@ -64,8 +64,11 @@ void Field_draw (Field *field, Positions *positions) {
             }
 
             attron (COLOR_PAIR (color));
-            // mvprintw(j, i, "%c", ch);
+#if !DEBUG_MODE
+            mvprintw (i, j, "%c", ch);
+#else
             mvprintw (i, j, "%d", value);
+#endif
             attroff (COLOR_PAIR (color));
         }
     }

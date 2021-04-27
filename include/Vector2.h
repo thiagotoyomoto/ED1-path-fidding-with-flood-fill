@@ -6,11 +6,12 @@
 typedef struct Vector2 Vector2;
 
 struct Vector2 {
-  int x;
-  int y;
+    int x;
+    int y;
 };
 
-bool Vector2_equals(Vector2, Vector2);
-Vector2 Vector2_add(Vector2, Vector2);
+bool    Vector2_equals (Vector2, Vector2);
+Vector2 Vector2_add (Vector2, Vector2);
+int     Vector2_sqr_distance (Vector2, Vector2);
 
 #endif /* VECTOR2_H */

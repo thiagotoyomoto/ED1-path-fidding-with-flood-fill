@@ -6,14 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEBUG_MODE 1
-
-void          flood_fill (Field *, Positions);
-Vector2Queue *get_path (Field *, Positions);
-void          drawDebugWindow ();
+void flood_fill (Field *, Positions *);
+void get_path (Field *, Positions *);
 
 int main (int argc, char *argv[]) {
-    Field *   field = Field_create (3, 3);
+    Field *   field = Field_create (5, 5);
     Positions pos   = {
         { 0, 0 },                                // Posição inicial
         { field->width - 1, field->height - 1 }, // Posição alvo
@@ -44,16 +41,30 @@ int main (int argc, char *argv[]) {
     keypad (stdscr, true);
 
     while (run_loop) {
+        erase ();
         if (was_modified) {
-            flood_fill (field, pos);
+            flood_fill (field, &pos);
             was_modified = false;
         }
 
-        erase ();
         Field_draw (field, &pos);
 
 #if DEBUG_MODE
-        // mvprintw (field->height "pos\n");
+        mvprintw (field->height + 1,
+                  1,
+                  "pos.start     = (%2d; %2d)\n",
+                  pos.start.x,
+                  pos.start.y);
+        mvprintw (field->height + 2,
+                  1,
+                  "pos.target    = (%2d; %2d)\n",
+                  pos.target.x,
+                  pos.target.y);
+        mvprintw (field->height + 3,
+                  1,
+                  "pos.selected  = (%2d; %2d)\n",
+                  pos.selected.x,
+                  pos.selected.y);
 #endif
 
         refresh ();
@@ -109,60 +120,25 @@ int main (int argc, char *argv[]) {
     return 0;
 }
 
-// void flood_fill(Field *field, Positions *position) {
-//   Vector2Queue *queue = Vector2Queue_create();
+void flood_fill (Field *field, Positions *pos) {
+    Vector2Queue *queue = Vector2Queue_create ();
 
-//   Field_reset(field);
+    if (queue == NULL)
+        return;
 
-//   field->data[position->start.y][position->start.x] = 1;
-//   Vector2Queue_enqueue(queue, position->start);
-
-//   while (!Vector2Queue_empty(queue)) {
-//     Vector2 curr_pos = Vector2Queue_front(queue);
-//     int new_value = field->data[curr_pos.y][curr_pos.x] + 1;
-
-//     if (curr_pos.y - 1 >= 0 &&
-//         field->data[curr_pos.y - 1][curr_pos.x] == DEFAULT_VALUE) {
-//       field->data[curr_pos.y - 1][curr_pos.x] = new_value;
-//       Vector2Queue_enqueue(queue, (Vector2){curr_pos.x, curr_pos.y - 1});
-//     }
-//     if (curr_pos.x - 1 >= 0 &&
-//         field->data[curr_pos.y][curr_pos.x - 1] == DEFAULT_VALUE) {
-//       field->data[curr_pos.y][curr_pos.x - 1] = new_value;
-//       Vector2Queue_enqueue(queue, (Vector2){curr_pos.x - 1, curr_pos.y});
-//     }
-//     if (curr_pos.y + 1 <= field->height - 1 &&
-//         field->data[curr_pos.y + 1][curr_pos.x] == DEFAULT_VALUE) {
-//       field->data[curr_pos.y + 1][curr_pos.x] = new_value;
-//       Vector2Queue_enqueue(queue, (Vector2){curr_pos.x, curr_pos.y + 1});
-//     }
-//     if (curr_pos.x + 1 <= field->width - 1 &&
-//         field->data[curr_pos.y][curr_pos.x + 1] == DEFAULT_VALUE) {
-//       field->data[curr_pos.y][curr_pos.x + 1] = new_value;
-//       Vector2Queue_enqueue(queue, (Vector2){curr_pos.x + 1, curr_pos.y});
-//     }
-
-//     Vector2Queue_dequeue(queue);
-//   }
-
-//   Vector2Queue_destroy(queue);
-// }
-
-void flood_fill (Field *field, Positions pos) {
-    int           i, j;
-    Vector2Queue *queue     = Vector2Queue_create ();
-    Vector2       offset[4] = { { 0, -1 }, { -1, 0 }, { 0, 1 }, { 1, 0 } };
+    int     i, j, k = 0;
+    Vector2 offset[4] = { { 0, -1 }, { -1, 0 }, { 0, 1 }, { 1, 0 } };
 
     // Resetando os valores
     for (i = 0; i < field->height; ++i) {
         for (j = 0; j < field->width; ++j) {
-            // if (field->data[i][j] != WALL_VALUE)
-            field->data[i][j] = 0;
+            if (field->data[i][j] != WALL_VALUE)
+                field->data[i][j] = DEFAULT_VALUE;
         }
     }
 
-    field->data[pos.start.y][pos.start.x] = 1;
-    Vector2Queue_enqueue (queue, pos.start);
+    field->data[pos->start.y][pos->start.x] = 1;
+    Vector2Queue_enqueue (queue, pos->start);
 
     while (!Vector2Queue_empty (queue)) {
         Vector2 curr_pos  = Vector2Queue_front (queue);
@@ -190,41 +166,6 @@ void flood_fill (Field *field, Positions pos) {
     Vector2Queue_destroy (queue);
 }
 
-Vector2Queue *get_path (Field *field, Positions pos) {
-    Vector2Queue *queue = Vector2Queue_create ();
-    Vector2Queue *path  = Vector2Queue_create ();
-
-    Vector2Queue_enqueue (queue, pos.target);
-    while (!Vector2Queue_empty (queue)) {
-        Vector2 curr_pos = Vector2Queue_front (queue);
-        Vector2Queue_enqueue (path, curr_pos);
-        int curr_value = field->data[curr_pos.y][curr_pos.x];
-        if (curr_pos.y - 1 >= 0 &&
-            field->data[curr_pos.y - 1][curr_pos.x] > 0 &&
-            field->data[curr_pos.y - 1][curr_pos.x] < curr_value) {
-            Vector2Queue_enqueue (queue,
-                                  (Vector2) { curr_pos.y - 1, curr_pos.x });
-        } else if (curr_pos.x - 1 >= 0 &&
-                   field->data[curr_pos.y][curr_pos.x - 1] > 0 &&
-                   field->data[curr_pos.y - 1][curr_pos.x] < curr_value) {
-            Vector2Queue_enqueue (queue,
-                                  (Vector2) { curr_pos.y, curr_pos.x - 1 });
-        } else if (curr_pos.y + 1 >= 0 &&
-                   field->data[curr_pos.y + 1][curr_pos.x] > 0 &&
-                   field->data[curr_pos.y - 1][curr_pos.x] < curr_value) {
-            Vector2Queue_enqueue (queue,
-                                  (Vector2) { curr_pos.y + 1, curr_pos.x });
-        } else if (curr_pos.x + 1 >= 0 &&
-                   field->data[curr_pos.y][curr_pos.x + 1] > 0 &&
-                   field->data[curr_pos.y - 1][curr_pos.x] < curr_value) {
-            Vector2Queue_enqueue (queue,
-                                  (Vector2) { curr_pos.y, curr_pos.x + 1 });
-        }
-    }
-
-    Vector2Queue_destroy (queue);
-
-    Vector2Queue_dequeue (path);
-
-    return path;
+void get_path (Field *field, Positions *pos) {
+    Vector2 neighbour_pos = { -1, -1 };
 }

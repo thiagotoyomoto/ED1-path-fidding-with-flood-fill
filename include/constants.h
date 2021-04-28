@@ -1,6 +1,9 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include "./Vector2.h"
+
+// Se quiser verificar os valores no mapa, defina esta constante como 1.
 #define DEBUG_MODE 0
 
 #define DEFAULT_VALUE 0
@@ -16,5 +19,7 @@
 #define SELECTED_TARGET_COLOR  8
 #define SELECTED_WALL_COLOR    9
 #define SELECTED_PATH_COLOR    10
+
+static Vector2 offset[4] = { { 0, -1 }, { -1, 0 }, { 0, 1 }, { 1, 0 } };
 
 #endif /* CONSTANTS_H */

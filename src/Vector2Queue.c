@@ -62,3 +62,18 @@ void Vector2Queue_dequeue (Vector2Queue *queue) {
             queue->tail = NULL;
     }
 }
+
+void Vector2Queue_clear (Vector2Queue *queue) {
+    if (queue == NULL)
+        return;
+
+    Vector2QueueNode *next = NULL;
+    while (queue->head != NULL) {
+        next = queue->head->next;
+        free (queue->head);
+        queue->head = next;
+    }
+
+    queue->head = NULL;
+    queue->tail = NULL;
+}

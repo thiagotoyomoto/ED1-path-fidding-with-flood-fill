@@ -9,5 +9,7 @@ Vector2 Vector2_add (Vector2 a, Vector2 b) {
 }
 
 int Vector2_sqr_distance (Vector2 a, Vector2 b) {
-    return (a.x * b.x) + (a.y * b.y);
+    int x = b.x - a.x;
+    int y = b.y - a.y;
+    return (x * x) + (y * y);
 }

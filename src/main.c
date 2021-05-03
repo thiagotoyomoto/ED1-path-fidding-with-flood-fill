@@ -145,12 +145,9 @@ bool in_boundary (Vector2 pos, int w, int h) {
 }
 
 void flood_fill (Field *field, Positions *pos) {
+    int i, j;
+
     Vector2Queue *queue = Vector2Queue_create ();
-
-    if (queue == NULL)
-        return;
-
-    int i, j, k = 0;
 
     // Resetando os valores
     for (i = 0; i < field->height; ++i)
@@ -162,22 +159,26 @@ void flood_fill (Field *field, Positions *pos) {
     Vector2Queue_enqueue (queue, pos->start);
 
     while (!Vector2Queue_empty (queue)) {
-        Vector2 curr_pos  = Vector2Queue_front (queue);
-        int     new_value = field->data[curr_pos.y][curr_pos.x] + 1;
+        Vector2 current_position = Vector2Queue_front (queue);
+        int new_value = field->data[current_position.y][current_position.x] + 1;
 
         for (i = 0; i < 4; ++i) {
             // posição do vizinho
-            Vector2 n_pos = Vector2_add (curr_pos, offset[i]);
+            Vector2 neightbour_position =
+                Vector2_add (current_position, offset[i]);
 
             // verifica a posição do vizinho
-            if (in_boundary (n_pos, field->width, field->height)) {
+            if (in_boundary (neightbour_position,
+                             field->width,
+                             field->height)) {
                 // valor do vizinho
-                int *n_value = &field->data[n_pos.y][n_pos.x];
+                int *neighbour_value =
+                    &field->data[neightbour_position.y][neightbour_position.x];
 
                 // se não tiver valor, recebe um novo valor
-                if (*n_value == 0) {
-                    *n_value = new_value;
-                    Vector2Queue_enqueue (queue, n_pos);
+                if (*neighbour_value == 0) {
+                    *neighbour_value = new_value;
+                    Vector2Queue_enqueue (queue, neightbour_position);
                 }
             }
         }
@@ -189,43 +190,52 @@ void flood_fill (Field *field, Positions *pos) {
 }
 
 void set_path (Field *field, Positions *pos) {
-    Vector2 curr_pos = pos->target;
-
+    Vector2 current_position = pos->target;
     Vector2Queue_clear (pos->path);
 
     bool has_next;
     do {
-        has_next = false;
-        int     i, num_neigh = 0;
-        int     curr_value = field->data[curr_pos.y][curr_pos.x];
-        Vector2 neigh_poss[4];
+        has_next = true;
+        int i, neightbour_counter = 0;
+        int curr_value = field->data[current_position.y][current_position.x];
+        Vector2 neighbour_positions[4];
         for (i = 0; i < 4; ++i) {
-            Vector2 n_pos = Vector2_add (curr_pos, offset[i]);
-            if (in_boundary (n_pos, field->width, field->height)) {
-                int n_value = field->data[n_pos.y][n_pos.x];
-                if (n_value != WALL_VALUE && n_value < curr_value)
-                    if (Vector2_equals (n_pos, pos->start))
+            Vector2 neighbour_position =
+                Vector2_add (current_position, offset[i]);
+            if (in_boundary (neighbour_position, field->width, field->height)) {
+                int neighbour_value =
+                    field->data[neighbour_position.y][neighbour_position.x];
+                if (neighbour_value > DEFAULT_VALUE &&
+                    neighbour_value < curr_value) {
+                    if (Vector2_equals (neighbour_position, pos->start)) {
+                        neightbour_counter = 0;
                         break;
-                neigh_poss[num_neigh++] = n_pos;
+                    }
+                    neighbour_positions[neightbour_counter++] =
+                        neighbour_position;
+                }
             }
         }
 
-        if (num_neigh > 0) {
+        bool has_neighbours = neightbour_counter > 0;
+        if (has_neighbours) {
             // menor distância
-            int min_dist = Vector2_sqr_distance (neigh_poss[0], pos->start);
+            int shortest_distance =
+                Vector2_sqr_distance (neighbour_positions[0], pos->start);
             // índice do menor
-            int min_i = 0;
-            for (i = 1; i < num_neigh; ++i) {
-                int other_dist =
-                    Vector2_sqr_distance (neigh_poss[i], pos->start);
-                if (other_dist < min_dist) {
-                    min_dist = other_dist;
-                    min_i    = i;
+            int shortest_index = 0;
+            for (i = 1; i < neightbour_counter; ++i) {
+                int current_distance =
+                    Vector2_sqr_distance (neighbour_positions[i], pos->start);
+                if (current_distance < shortest_distance) {
+                    shortest_distance = current_distance;
+                    shortest_index    = i;
                 }
             }
-            Vector2Queue_enqueue (pos->path, neigh_poss[min_i]);
-            curr_pos = neigh_poss[min_i];
-            has_next = true;
+            current_position = neighbour_positions[shortest_index];
+            Vector2Queue_enqueue (pos->path, current_position);
+        } else {
+            has_next = false;
         }
     } while (has_next);
 }
